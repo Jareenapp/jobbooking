@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///Users/jareenapp/Downloads/booking-register_4.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jareena Printing Press — Job Booking Register</title>
+<style>
+  :root{
+    --paper:#FAF7F0;
+    --paper-dim:#F1ECDF;
+    --ink:#1F2430;
+    --ink-soft:#4A5063;
+    --line:#D8D2C4;
+    --stamp:#B23A2F;
+    --stamp-dim:#E8DAD8;
+    --balance:#2F6F4E;
+    --balance-dim:#E1EEE6;
+    --white:#FFFFFF;
+    --shadow: 0 1px 2px rgba(31,36,48,0.06), 0 4px 14px rgba(31,36,48,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding: 28px 20px 60px;
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom: 26px;
+    flex-wrap:wrap;
+  }
+  .brand-mark{
+    display:flex; align-items:center; gap:14px;
+  }
+  .brand-mark .glyph{
+    width:46px;height:46px;border:2.5px solid var(--ink);
+    border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight:700; font-size:20px; letter-spacing:-1px;
+    transform: rotate(-2deg);
+    flex-shrink:0;
+  }
+  h1{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 26px;
+    margin:0 0 3px;
+    letter-spacing: 0.2px;
+  }
+  header.top .subtitle{
+    margin:0; font-size:13px; color:var(--ink-soft); letter-spacing:.3px;
+  }
+  header.top .today{
+    text-align:right; font-size:12.5px; color:var(--ink-soft);
+    font-family: "Courier New", monospace;
+  }
+
+  /* ---------- Summary strip ---------- */
+  .summary{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:14px;
+    margin-bottom:26px;
+  }
+  .summary .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .summary .card .label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-soft); margin-bottom:6px; font-weight:600;
+  }
+  .summary .card .value{
+    font-family:"Courier New", monospace;
+    font-size:22px; font-weight:700; color:var(--ink);
+  }
+  .summary .card.balance .value{ color:var(--balance); }
+  .summary .card.jobs .value{ color:var(--stamp); }
+
+  /* ---------- Ticket / entry form ---------- */
+  .ticket{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow: var(--shadow);
+    padding: 20px 22px 18px;
+    margin-bottom: 28px;
+    position:relative;
+  }
+  .ticket::before{
+    content:"";
+    position:absolute; left:0; right:0; top:56px;
+    border-top: 1px dashed var(--line);
+  }
+  .ticket h2{
+    font-family: Georgia, serif;
+    font-size:16px; margin:0 0 14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .ticket h2 .no-badge{
+    font-family:"Courier New", monospace;
+    font-size:12px; background:var(--stamp-dim); color:var(--stamp);
+    padding:2px 8px; border-radius:20px; font-weight:700;
+  }
+  form#entryForm{
+    display:grid;
+    grid-template-columns: 1fr 1.4fr 2fr 1fr 1fr auto;
+    gap:12px;
+    align-items:end;
+    padding-top:10px;
+  }
+  .field{ display:flex; flex-direction:column; gap:5px; }
+  .field label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); font-weight:600;
+  }
+  .field input, .field select{
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:9px 10px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:none; border-color: var(--stamp);
+    background:var(--white);
+    box-shadow:0 0 0 3px var(--stamp-dim);
+  }
+  .btn{
+    border:none; border-radius:6px; cursor:pointer;
+    font-family:inherit; font-weight:600; font-size:13.5px;
+    padding:10px 18px;
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#33394A; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:var(--paper-dim); }
+  .btn-danger{ background:transparent; color:var(--stamp); }
+  .btn-danger:hover{ background:var(--stamp-dim); }
+  .btn-small{ padding:6px 10px; font-size:12px; border-radius:5px; }
+
+  #cancelEdit{ display:none; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; margin-bottom:12px; flex-wrap:wrap;
+  }
+  .toolbar .search{
+    flex:1; min-width:220px;
+    position:relative;
+  }
+  .toolbar .search input{
+    width:100%; padding:9px 12px 9px 32px;
+    border:1px solid var(--line); border-radius:20px;
+    font-size:13.5px; background:var(--white); font-family:inherit;
+  }
+  .toolbar .search::before{
+    content:"⌕"; position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    color:var(--ink-soft); font-size:15px;
+  }
+  .toolbar .actions{ display:flex; gap:8px; }
+
+  /* ---------- Ledger table ---------- */
+  .ledger-wrap{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow: var(--shadow);
+  }
+  .ledger-scroll{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; min-width:820px; }
+  thead th{
+    text-align:left;
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--paper); background:var(--ink);
+    padding:12px 14px; font-weight:600; white-space:nowrap;
+  }
+  thead th.num{ text-align:right; }
+  tbody td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--line);
+    font-size:14px; vertical-align:middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(even){ background: var(--paper-dim); }
+  tbody tr:hover{ background: var(--stamp-dim); }
+
+  td.num, th.num{ text-align:right; font-family:"Courier New", monospace; }
+  td.no-cell{
+    font-family:"Courier New", monospace;
+    font-weight:700; color:var(--stamp);
+    display:inline-block;
+    transform: rotate(-3deg);
+  }
+  td.company{ font-weight:600; }
+  td.desc{ color:var(--ink-soft); max-width:260px; }
+  td.balance-cell{ font-weight:700; color:var(--balance); font-family:"Courier New", monospace; }
+  td.balance-cell.due{ color:var(--stamp); }
+  td.row-actions{ white-space:nowrap; text-align:right; }
+
+  .empty-row td{
+    text-align:center; padding:48px 20px; color:var(--ink-soft);
+    font-size:14px;
+  }
+  .empty-row .big{ font-size:34px; display:block; margin-bottom:8px; }
+
+  tfoot td{
+    padding:14px; font-weight:700; background:var(--paper-dim);
+    border-top:2px solid var(--ink); font-size:14px;
+  }
+  tfoot td.num{ font-family:"Courier New", monospace; }
+
+  footer.foot{
+    text-align:center; color:var(--ink-soft); font-size:12px; margin-top:22px;
+  }
+
+  @media (max-width: 860px){
+    form#entryForm{ grid-template-columns: 1fr 1fr; }
+    form#entryForm .field.full{ grid-column: 1 / -1; }
+    .summary{ grid-template-columns: repeat(2,1fr); }
+  }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    .ticket, .toolbar, footer.foot, .row-actions, #entryForm { display:none !important; }
+    .summary{ margin-bottom:14px; }
+    .ledger-wrap{ box-shadow:none; border:1px solid #999; }
+    thead th{ background:#eee !important; color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-mark">
+      <div class="glyph">JP</div>
+      <div>
+        <h1>Jareena Printing Press</h1>
+        <p class="subtitle">Job Booking Register — advance &amp; balance tracker</p>
+      </div>
+    </div>
+    <div class="today" id="todayLabel">Today: 10 Jul 2026</div>
+  </header>
+
+  <section class="summary">
+    <div class="card jobs">
+      <div class="label">Total Bookings</div>
+      <div class="value" id="sumCount">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Total Job Value</div>
+      <div class="value" id="sumTotal">AED 0.00</div>
+    </div>
+    <div class="card">
+      <div class="label">Advance Received</div>
+      <div class="value" id="sumAdvance">AED 0.00</div>
+    </div>
+    <div class="card balance">
+      <div class="label">Balance Due</div>
+      <div class="value" id="sumBalance">AED 0.00</div>
+    </div>
+  </section>
+
+  <section class="ticket">
+    <h2>New Booking <span class="no-badge" id="nextNoBadge">NO. 1</span></h2>
+    <form id="entryForm">
+      <div class="field">
+        <label for="fDate">Date</label>
+        <input type="date" id="fDate" required="">
+      </div>
+      <div class="field">
+        <label for="fCompany">Company Name</label>
+        <input type="text" id="fCompany" placeholder="e.g. Al Noor Trading" required="">
+      </div>
+      <div class="field">
+        <label for="fDesc">Description</label>
+        <input type="text" id="fDesc" placeholder="e.g. 500 A5 flyers, business cards" required="">
+      </div>
+      <div class="field">
+        <label for="fAdvance">Advance (AED)</label>
+        <input type="number" id="fAdvance" min="0" step="0.01" placeholder="0.00" required="">
+      </div>
+      <div class="field">
+        <label for="fTotal">Total (AED)</label>
+        <input type="number" id="fTotal" min="0" step="0.01" placeholder="0.00" required="">
+      </div>
+      <div class="field">
+        <button type="submit" class="btn btn-primary" id="submitBtn">Add Booking</button>
+      </div>
+      <input type="hidden" id="fId">
+    </form>
+    <div style="margin-top:10px;">
+      <button type="button" class="btn btn-ghost btn-small" id="cancelEdit">Cancel edit</button>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="search">
+      <input type="text" id="searchBox" placeholder="Search by company name…">
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="importBtn">Import Old Backup (one-time)</button>
+      <input type="file" id="importInput" accept=".json" style="display:none;">
+      <button class="btn btn-ghost" id="exportCsvBtn">Export CSV</button>
+      <button class="btn btn-ghost" id="exportJsonBtn">Download Backup</button>
+      <button class="btn btn-ghost" id="printBtn">Print</button>
+    </div>
+  </div>
+  <div id="fileStatus" style="font-size:12.5px;color:var(--ink-soft);margin:-6px 0 14px;display:flex;align-items:center;gap:6px;">
+    <span id="syncDot" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(47, 111, 78); display: inline-block;"></span>
+    <span id="syncText">🟢 Live — connected. 0 booking(s) synced across all devices.</span>
+  </div>
+
+  <div class="ledger-wrap">
+    <div class="ledger-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Date</th>
+            <th>Company Name</th>
+            <th>Description</th>
+            <th class="num">Advance</th>
+            <th class="num">Total</th>
+            <th class="num">Balance</th>
+            <th class="row-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"><tr class="empty-row"><td colspan="8"><span class="big">🖨️</span>No bookings yet — add the first one above.</td></tr></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4">Totals</td>
+            <td class="num" id="footAdvance">0.00</td>
+            <td class="num" id="footTotal">0.00</td>
+            <td class="num" id="footBalance">0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <footer class="foot">Saved automatically in this browser · Jareena Printing Press LLC, Sharjah, UAE</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, onSnapshot, query, orderBy,
+  addDoc, updateDoc, deleteDoc, runTransaction, getDoc, setDoc,
+  serverTimestamp, enableIndexedDbPersistence, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCeg6mTIR1iZvJnItn44DVGlzPsF8G5iGU",
+  authDomain: "job-booking-d31b1.firebaseapp.com",
+  projectId: "job-booking-d31b1",
+  storageBucket: "job-booking-d31b1.firebasestorage.app",
+  messagingSenderId: "870484426552",
+  appId: "1:870484426552:web:87ca130f3db48d0f358bcd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+try { await enableIndexedDbPersistence(db); } catch (e) { /* multiple tabs open, or unsupported — fine, app still works */ }
+
+const bookingsCol = collection(db, "bookings");
+const counterRef = doc(db, "meta", "counter");
+
+const tbody = document.getElementById('tbody');
+const form = document.getElementById('entryForm');
+const fId = document.getElementById('fId');
+const fDate = document.getElementById('fDate');
+const fCompany = document.getElementById('fCompany');
+const fDesc = document.getElementById('fDesc');
+const fAdvance = document.getElementById('fAdvance');
+const fTotal = document.getElementById('fTotal');
+const submitBtn = document.getElementById('submitBtn');
+const cancelEditBtn = document.getElementById('cancelEdit');
+const nextNoBadge = document.getElementById('nextNoBadge');
+const searchBox = document.getElementById('searchBox');
+const syncDot = document.getElementById('syncDot');
+const syncText = document.getElementById('syncText');
+
+let bookings = [];      // live mirror of Firestore data
+let nextNoPreview = 1;  // best-guess "next number" shown before saving
+
+function setSync(state, msg){
+  const colors = { live: '#2F6F4E', busy: '#B23A2F', off: '#999' };
+  syncDot.style.background = colors[state] || '#999';
+  syncText.textContent = msg;
+}
+
+function fmt(n){
+  n = Number(n) || 0;
+  return n.toLocaleString('en-AE', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function todayISO(){
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+function niceDate(iso){
+  if(!iso) return '';
+  const parts = iso.split('-');
+  if(parts.length!==3) return iso;
+  const d = new Date(parts[0], parts[1]-1, parts[2]);
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('todayLabel').textContent = 'Today: ' + niceDate(todayISO());
+fDate.value = todayISO();
+
+function refreshNextNoBadge(){
+  if(!fId.value){
+    nextNoBadge.textContent = 'NO. ' + nextNoPreview;
+  }
+}
+
+function render(){
+  const q = searchBox.value.trim().toLowerCase();
+  const rows = bookings
+    .filter(b => !q || (b.company||'').toLowerCase().includes(q))
+    .slice()
+    .sort((a,b) => (b.date||'').localeCompare(a.date||'') || ((b.no||0)-(a.no||0)));
+
+  tbody.innerHTML = '';
+
+  if(rows.length === 0){
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    tr.innerHTML = `<td colspan="8"><span class="big">🖨️</span>${bookings.length===0 ? 'No bookings yet — add the first one above.' : 'No bookings match your search.'}</td>`;
+    tbody.appendChild(tr);
+  } else {
+    for(const b of rows){
+      const balance = (Number(b.total)||0) - (Number(b.advance)||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="no-cell">#${b.no}</span></td>
+        <td>${niceDate(b.date)}</td>
+        <td class="company">${escapeHtml(b.company)}</td>
+        <td class="desc">${escapeHtml(b.desc)}</td>
+        <td class="num">${fmt(b.advance)}</td>
+        <td class="num">${fmt(b.total)}</td>
+        <td class="num balance-cell ${balance>0?'due':''}">${fmt(balance)}</td>
+        <td class="row-actions">
+          <button class="btn btn-ghost btn-small" data-edit="${b.id}">Edit</button>
+          <button class="btn btn-danger btn-small" data-del="${b.id}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  let totalAdvance=0, totalTotal=0;
+  for(const b of rows){
+    totalAdvance += Number(b.advance)||0;
+    totalTotal += Number(b.total)||0;
+  }
+  const totalBalance = totalTotal - totalAdvance;
+
+  document.getElementById('sumCount').textContent = rows.length;
+  document.getElementById('sumTotal').textContent = 'AED ' + fmt(totalTotal);
+  document.getElementById('sumAdvance').textContent = 'AED ' + fmt(totalAdvance);
+  document.getElementById('sumBalance').textContent = 'AED ' + fmt(totalBalance);
+
+  document.getElementById('footAdvance').textContent = fmt(totalAdvance);
+  document.getElementById('footTotal').textContent = fmt(totalTotal);
+  document.getElementById('footBalance').textContent = fmt(totalBalance);
+
+  refreshNextNoBadge();
+}
+
+// ---- Live real-time sync: every client sees every change instantly ----
+setSync('busy', 'Connecting to live database…');
+const q = query(bookingsCol, orderBy('no', 'desc'));
+onSnapshot(q, (snapshot) => {
+  bookings = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const maxNo = bookings.length ? Math.max(...bookings.map(b=>b.no||0)) : 0;
+  nextNoPreview = maxNo + 1;
+  setSync('live', '🟢 Live — connected. ' + bookings.length + ' booking(s) synced across all devices.');
+  render();
+}, (err) => {
+  console.error(err);
+  setSync('off', '🔴 Connection lost — check your internet. Changes will resume syncing once reconnected.');
+});
+
+// ---- Atomically assign the next NO so concurrent staff never collide ----
+async function getNextNo(){
+  return await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    const current = snap.exists() ? (snap.data().value || 0) : 0;
+    const next = current + 1;
+    tx.set(counterRef, { value: next }, { merge: true });
+    return next;
+  });
+}
+
+form.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const advance = parseFloat(fAdvance.value) || 0;
+  const total = parseFloat(fTotal.value) || 0;
+  submitBtn.disabled = true;
+
+  try{
+    if(fId.value){
+      await updateDoc(doc(db, 'bookings', fId.value), {
+        date: fDate.value,
+        company: fCompany.value.trim(),
+        desc: fDesc.value.trim(),
+        advance, total,
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      const no = await getNextNo();
+      await addDoc(bookingsCol, {
+        no,
+        date: fDate.value,
+        company: fCompany.value.trim(),
+        desc: fDesc.value.trim(),
+        advance, total,
+        createdAt: serverTimestamp()
+      });
+    }
+    resetForm();
+  }catch(err){
+    console.error(err);
+    alert('Could not save — check your internet connection and try again.');
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+
+function resetForm(){
+  fId.value = '';
+  fDate.value = todayISO();
+  fCompany.value = '';
+  fDesc.value = '';
+  fAdvance.value = '';
+  fTotal.value = '';
+  submitBtn.textContent = 'Add Booking';
+  cancelEditBtn.style.display = 'none';
+  document.querySelector('.ticket h2').firstChild.textContent = 'New Booking ';
+  refreshNextNoBadge();
+}
+
+cancelEditBtn.addEventListener('click', resetForm);
+
+tbody.addEventListener('click', async function(e){
+  const editId = e.target.getAttribute('data-edit');
+  const delId = e.target.getAttribute('data-del');
+  if(editId){
+    const b = bookings.find(x => x.id === editId);
+    if(!b) return;
+    fId.value = b.id;
+    fDate.value = b.date;
+    fCompany.value = b.company;
+    fDesc.value = b.desc;
+    fAdvance.value = b.advance;
+    fTotal.value = b.total;
+    submitBtn.textContent = 'Save Changes';
+    cancelEditBtn.style.display = 'inline-block';
+    nextNoBadge.textContent = 'NO. ' + b.no;
+    document.querySelector('.ticket').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  if(delId){
+    if(confirm('Delete this booking? This cannot be undone, and will remove it for everyone.')){
+      try{
+        await deleteDoc(doc(db, 'bookings', delId));
+        if(fId.value === delId) resetForm();
+      }catch(err){
+        console.error(err);
+        alert('Could not delete — check your internet connection and try again.');
+      }
+    }
+  }
+});
+
+searchBox.addEventListener('input', render);
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+document.getElementById('exportCsvBtn').addEventListener('click', function(){
+  const rows = [['No','Date','Company Name','Description','Advance','Total','Balance']];
+  bookings
+    .slice()
+    .sort((a,b) => (a.date||'').localeCompare(b.date||'') || ((a.no||0)-(b.no||0)))
+    .forEach(b => {
+      const balance = (Number(b.total)||0) - (Number(b.advance)||0);
+      rows.push([b.no, b.date, b.company, b.desc, fmt(b.advance), fmt(b.total), fmt(balance)]);
+    });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'jareena-booking-register-' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('exportJsonBtn').addEventListener('click', function(){
+  const payload = { app: 'jareena-booking-register', exportedAt: new Date().toISOString(), bookings };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'jareena-booking-backup-' + todayISO() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ---- One-time migration: import an old local/file backup into Firestore ----
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importInput').click());
+document.getElementById('importInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(evt){
+    try{
+      const data = JSON.parse(evt.target.result);
+      const incoming = Array.isArray(data.bookings) ? data.bookings : (Array.isArray(data) ? data : null);
+      if(!incoming){ alert('This file does not look like a valid backup file.'); return; }
+      const proceed = confirm(
+        'This will add ' + incoming.length + ' booking(s) from this file into the shared live database, ' +
+        'keeping their original numbers where possible.\n\nUse this only once, for old data. Continue?'
+      );
+      if(!proceed) return;
+
+      setSync('busy', 'Importing ' + incoming.length + ' booking(s)…');
+      const batch = writeBatch(db);
+      let maxNo = 0;
+      for(const b of incoming){
+        const ref = doc(bookingsCol);
+        batch.set(ref, {
+          no: b.no || 0,
+          date: b.date || todayISO(),
+          company: b.company || '',
+          desc: b.desc || '',
+          advance: Number(b.advance)||0,
+          total: Number(b.total)||0,
+          createdAt: serverTimestamp()
+        });
+        if((b.no||0) > maxNo) maxNo = b.no;
+      }
+      await batch.commit();
+
+      // keep the shared counter ahead of the highest imported number
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(counterRef);
+        const current = snap.exists() ? (snap.data().value || 0) : 0;
+        if(maxNo > current) tx.set(counterRef, { value: maxNo }, { merge: true });
+      });
+
+      alert('Import complete — ' + incoming.length + ' booking(s) added to the live database.');
+    }catch(err){
+      console.error(err);
+      alert('Could not read or import this file.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+render();
+</script>
+
+
+
+</body></html>
