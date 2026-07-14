@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///Users/jareenapp/Downloads/booking-register_4.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jareena Printing Press — Job Booking Register</title>
 <style>
@@ -120,7 +120,7 @@
   }
   form#entryForm{
     display:grid;
-    grid-template-columns: 1fr 1.4fr 2fr 1fr 1fr auto;
+    grid-template-columns: 0.8fr 1fr 1.4fr 2fr 1fr 1fr auto;
     gap:12px;
     align-items:end;
     padding-top:10px;
@@ -190,7 +190,7 @@
     box-shadow: var(--shadow);
   }
   .ledger-scroll{ overflow-x:auto; }
-  table{ width:100%; border-collapse:collapse; min-width:820px; }
+  table{ width:100%; border-collapse:collapse; min-width:920px; }
   thead th{
     text-align:left;
     font-size:11px; text-transform:uppercase; letter-spacing:.07em;
@@ -262,7 +262,7 @@
         <p class="subtitle">Job Booking Register — advance &amp; balance tracker</p>
       </div>
     </div>
-    <div class="today" id="todayLabel">Today: 10 Jul 2026</div>
+    <div class="today" id="todayLabel"></div>
   </header>
 
   <section class="summary">
@@ -288,24 +288,28 @@
     <h2>New Booking <span class="no-badge" id="nextNoBadge">NO. 1</span></h2>
     <form id="entryForm">
       <div class="field">
+        <label for="fJobNo">Job Book No</label>
+        <input type="text" id="fJobNo" placeholder="e.g. 245">
+      </div>
+      <div class="field">
         <label for="fDate">Date</label>
-        <input type="date" id="fDate" required="">
+        <input type="date" id="fDate" required>
       </div>
       <div class="field">
         <label for="fCompany">Company Name</label>
-        <input type="text" id="fCompany" placeholder="e.g. Al Noor Trading" required="">
+        <input type="text" id="fCompany" placeholder="e.g. Al Noor Trading" required>
       </div>
       <div class="field">
         <label for="fDesc">Description</label>
-        <input type="text" id="fDesc" placeholder="e.g. 500 A5 flyers, business cards" required="">
+        <input type="text" id="fDesc" placeholder="e.g. 500 A5 flyers, business cards" required>
       </div>
       <div class="field">
         <label for="fAdvance">Advance (AED)</label>
-        <input type="number" id="fAdvance" min="0" step="0.01" placeholder="0.00" required="">
+        <input type="number" id="fAdvance" min="0" step="0.01" placeholder="0.00" required>
       </div>
       <div class="field">
         <label for="fTotal">Total (AED)</label>
-        <input type="number" id="fTotal" min="0" step="0.01" placeholder="0.00" required="">
+        <input type="number" id="fTotal" min="0" step="0.01" placeholder="0.00" required>
       </div>
       <div class="field">
         <button type="submit" class="btn btn-primary" id="submitBtn">Add Booking</button>
@@ -330,8 +334,8 @@
     </div>
   </div>
   <div id="fileStatus" style="font-size:12.5px;color:var(--ink-soft);margin:-6px 0 14px;display:flex;align-items:center;gap:6px;">
-    <span id="syncDot" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(47, 111, 78); display: inline-block;"></span>
-    <span id="syncText">🟢 Live — connected. 0 booking(s) synced across all devices.</span>
+    <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#999;display:inline-block;"></span>
+    <span id="syncText">Connecting to live database…</span>
   </div>
 
   <div class="ledger-wrap">
@@ -340,6 +344,7 @@
         <thead>
           <tr>
             <th>No</th>
+            <th>Job Book No</th>
             <th>Date</th>
             <th>Company Name</th>
             <th>Description</th>
@@ -349,10 +354,11 @@
             <th class="row-actions">Actions</th>
           </tr>
         </thead>
-        <tbody id="tbody"><tr class="empty-row"><td colspan="8"><span class="big">🖨️</span>No bookings yet — add the first one above.</td></tr></tbody>
+        <tbody id="tbody">
+        </tbody>
         <tfoot>
           <tr>
-            <td colspan="4">Totals</td>
+            <td colspan="5">Totals</td>
             <td class="num" id="footAdvance">0.00</td>
             <td class="num" id="footTotal">0.00</td>
             <td class="num" id="footBalance">0.00</td>
@@ -393,6 +399,7 @@ const counterRef = doc(db, "meta", "counter");
 const tbody = document.getElementById('tbody');
 const form = document.getElementById('entryForm');
 const fId = document.getElementById('fId');
+const fJobNo = document.getElementById('fJobNo');
 const fDate = document.getElementById('fDate');
 const fCompany = document.getElementById('fCompany');
 const fDesc = document.getElementById('fDesc');
@@ -456,7 +463,7 @@ function render(){
   if(rows.length === 0){
     const tr = document.createElement('tr');
     tr.className = 'empty-row';
-    tr.innerHTML = `<td colspan="8"><span class="big">🖨️</span>${bookings.length===0 ? 'No bookings yet — add the first one above.' : 'No bookings match your search.'}</td>`;
+    tr.innerHTML = `<td colspan="9"><span class="big">🖨️</span>${bookings.length===0 ? 'No bookings yet — add the first one above.' : 'No bookings match your search.'}</td>`;
     tbody.appendChild(tr);
   } else {
     for(const b of rows){
@@ -464,6 +471,7 @@ function render(){
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span class="no-cell">#${b.no}</span></td>
+        <td>${escapeHtml(b.jobNo||'—')}</td>
         <td>${niceDate(b.date)}</td>
         <td class="company">${escapeHtml(b.company)}</td>
         <td class="desc">${escapeHtml(b.desc)}</td>
@@ -532,6 +540,7 @@ form.addEventListener('submit', async function(e){
   try{
     if(fId.value){
       await updateDoc(doc(db, 'bookings', fId.value), {
+        jobNo: fJobNo.value.trim(),
         date: fDate.value,
         company: fCompany.value.trim(),
         desc: fDesc.value.trim(),
@@ -542,6 +551,7 @@ form.addEventListener('submit', async function(e){
       const no = await getNextNo();
       await addDoc(bookingsCol, {
         no,
+        jobNo: fJobNo.value.trim(),
         date: fDate.value,
         company: fCompany.value.trim(),
         desc: fDesc.value.trim(),
@@ -560,6 +570,7 @@ form.addEventListener('submit', async function(e){
 
 function resetForm(){
   fId.value = '';
+  fJobNo.value = '';
   fDate.value = todayISO();
   fCompany.value = '';
   fDesc.value = '';
@@ -580,6 +591,7 @@ tbody.addEventListener('click', async function(e){
     const b = bookings.find(x => x.id === editId);
     if(!b) return;
     fId.value = b.id;
+    fJobNo.value = b.jobNo || '';
     fDate.value = b.date;
     fCompany.value = b.company;
     fDesc.value = b.desc;
@@ -608,13 +620,13 @@ searchBox.addEventListener('input', render);
 document.getElementById('printBtn').addEventListener('click', () => window.print());
 
 document.getElementById('exportCsvBtn').addEventListener('click', function(){
-  const rows = [['No','Date','Company Name','Description','Advance','Total','Balance']];
+  const rows = [['No','Job Book No','Date','Company Name','Description','Advance','Total','Balance']];
   bookings
     .slice()
     .sort((a,b) => (a.date||'').localeCompare(b.date||'') || ((a.no||0)-(b.no||0)))
     .forEach(b => {
       const balance = (Number(b.total)||0) - (Number(b.advance)||0);
-      rows.push([b.no, b.date, b.company, b.desc, fmt(b.advance), fmt(b.total), fmt(balance)]);
+      rows.push([b.no, b.jobNo||'', b.date, b.company, b.desc, fmt(b.advance), fmt(b.total), fmt(balance)]);
     });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
@@ -695,7 +707,6 @@ document.getElementById('importInput').addEventListener('change', function(e){
 
 render();
 </script>
-
-
-
-</body></html>
+</script>
+</body>
+</html>
