@@ -148,6 +148,16 @@
     background:var(--white);
     box-shadow:0 0 0 3px var(--stamp-dim);
   }
+  .field input.field-invalid{
+    border-color: var(--stamp) !important;
+    background: var(--stamp-dim) !important;
+  }
+  .field-error{
+    display:none;
+    font-size:11.5px; color:var(--stamp); font-weight:600;
+    line-height:1.3;
+  }
+  .field-error.show{ display:block; }
   .btn{
     border:none; border-radius:6px; cursor:pointer;
     font-family:inherit; font-weight:600; font-size:13.5px;
@@ -339,6 +349,7 @@
       <div class="field">
         <label for="fJobNo">Job Book No</label>
         <input type="text" id="fJobNo" placeholder="e.g. 245">
+        <span id="jobNoError" class="field-error"></span>
       </div>
       <div class="field">
         <label for="fDate">Date</label>
@@ -451,11 +462,41 @@ try { await enableIndexedDbPersistence(db); } catch (e) { /* multiple tabs open,
 
 const bookingsCol = collection(db, "bookings");
 const counterRef = doc(db, "meta", "counter");
+const jobNoIndexCol = collection(db, "jobNoIndex");
+
+function normJobNo(s){ return String(s||'').trim().toLowerCase(); }
+function jobNoDocId(norm){
+  // Firestore doc IDs can't contain "/" — sanitize while staying unique per value
+  return norm.replace(/\//g, '_SLASH_').slice(0, 300);
+}
 
 const tbody = document.getElementById('tbody');
 const form = document.getElementById('entryForm');
 const fId = document.getElementById('fId');
 const fJobNo = document.getElementById('fJobNo');
+const jobNoErrorEl = document.getElementById('jobNoError');
+
+function showJobNoError(msg){
+  fJobNo.classList.add('field-invalid');
+  jobNoErrorEl.textContent = msg;
+  jobNoErrorEl.classList.add('show');
+}
+function clearJobNoError(){
+  fJobNo.classList.remove('field-invalid');
+  jobNoErrorEl.textContent = '';
+  jobNoErrorEl.classList.remove('show');
+}
+fJobNo.addEventListener('input', function(){
+  const val = normJobNo(fJobNo.value);
+  if(!val){ clearJobNoError(); return; }
+  const currentId = fId.value;
+  const dup = bookings.find(b => normJobNo(b.jobNo) === val && b.id !== currentId);
+  if(dup){
+    showJobNoError('Already used — Ticket #' + dup.no + ' (' + (dup.company || 'no company name') + '). Please enter a different Job Book No.');
+  } else {
+    clearJobNoError();
+  }
+});
 const fDate = document.getElementById('fDate');
 const fCompany = document.getElementById('fCompany');
 const fDesc = document.getElementById('fDesc');
@@ -603,51 +644,97 @@ onSnapshot(q, (snapshot) => {
   setSync('off', '🔴 Connection lost — check your internet. Changes will resume syncing once reconnected.');
 });
 
-// ---- Atomically assign the next NO so concurrent staff never collide ----
-async function getNextNo(){
-  return await runTransaction(db, async (tx) => {
-    const snap = await tx.get(counterRef);
-    const current = snap.exists() ? (snap.data().value || 0) : 0;
-    const next = current + 1;
-    tx.set(counterRef, { value: next }, { merge: true });
-    return next;
-  });
-}
+// (booking numbers are now assigned inside the save transaction below,
+//  atomically alongside the Job Book No uniqueness check)
 
 form.addEventListener('submit', async function(e){
   e.preventDefault();
   const advance = parseFloat(fAdvance.value) || 0;
   const total = parseFloat(fTotal.value) || 0;
+  const jobNoRaw = fJobNo.value.trim();
+  const norm = normJobNo(jobNoRaw);
+
+  if(norm){
+    const dup = bookings.find(b => normJobNo(b.jobNo) === norm && b.id !== fId.value);
+    if(dup){
+      showJobNoError('Already used — Ticket #' + dup.no + ' (' + (dup.company || 'no company name') + '). Please enter a different Job Book No.');
+      fJobNo.focus();
+      return;
+    }
+  }
+
   submitBtn.disabled = true;
 
   try{
     if(fId.value){
-      await updateDoc(doc(db, 'bookings', fId.value), {
-        jobNo: fJobNo.value.trim(),
-        date: fDate.value,
-        company: fCompany.value.trim(),
-        desc: fDesc.value.trim(),
-        advance, total,
-        updatedAt: serverTimestamp()
+      // ---- EDIT ----
+      const bookingId = fId.value;
+      const bookingRef = doc(db, 'bookings', bookingId);
+      const existing = bookings.find(b => b.id === bookingId);
+      const prevNorm = normJobNo(existing ? existing.jobNo : '');
+
+      await runTransaction(db, async (tx) => {
+        if(norm && norm !== prevNorm){
+          const idxRef = doc(jobNoIndexCol, jobNoDocId(norm));
+          const idxSnap = await tx.get(idxRef);
+          if(idxSnap.exists()) throw new Error('DUPLICATE_JOBNO');
+        }
+        if(prevNorm && prevNorm !== norm){
+          tx.delete(doc(jobNoIndexCol, jobNoDocId(prevNorm)));
+        }
+        if(norm){
+          tx.set(doc(jobNoIndexCol, jobNoDocId(norm)), { bookingId });
+        }
+        tx.update(bookingRef, {
+          jobNo: jobNoRaw,
+          date: fDate.value,
+          company: fCompany.value.trim(),
+          desc: fDesc.value.trim(),
+          advance, total,
+          updatedAt: serverTimestamp()
+        });
       });
     } else {
-      const no = await getNextNo();
-      await addDoc(bookingsCol, {
-        no,
-        jobNo: fJobNo.value.trim(),
-        date: fDate.value,
-        company: fCompany.value.trim(),
-        desc: fDesc.value.trim(),
-        advance, total,
-        printed: false,
-        ready: false,
-        createdAt: serverTimestamp()
+      // ---- CREATE ----
+      const bookingRef = doc(bookingsCol);
+
+      await runTransaction(db, async (tx) => {
+        let idxRef = null;
+        if(norm){
+          idxRef = doc(jobNoIndexCol, jobNoDocId(norm));
+          const idxSnap = await tx.get(idxRef);
+          if(idxSnap.exists()) throw new Error('DUPLICATE_JOBNO');
+        }
+        const counterSnap = await tx.get(counterRef);
+        const current = counterSnap.exists() ? (counterSnap.data().value || 0) : 0;
+        const no = current + 1;
+        tx.set(counterRef, { value: no }, { merge: true });
+
+        if(idxRef){
+          tx.set(idxRef, { bookingId: bookingRef.id });
+        }
+        tx.set(bookingRef, {
+          no,
+          jobNo: jobNoRaw,
+          date: fDate.value,
+          company: fCompany.value.trim(),
+          desc: fDesc.value.trim(),
+          advance, total,
+          printed: false,
+          ready: false,
+          createdAt: serverTimestamp()
+        });
       });
     }
     resetForm();
   }catch(err){
-    console.error(err);
-    alert('Could not save — check your internet connection and try again.');
+    if(err.message === 'DUPLICATE_JOBNO'){
+      showJobNoError('Job Book No "' + jobNoRaw + '" already exists. Please use a different number.');
+      fJobNo.focus();
+    } else {
+      console.error(err);
+      alert('Could not save — check your internet connection and try again.');
+    }
   }finally{
     submitBtn.disabled = false;
   }
@@ -664,6 +751,7 @@ function resetForm(){
   submitBtn.textContent = 'Add Booking';
   cancelEditBtn.style.display = 'none';
   document.querySelector('.ticket h2').firstChild.textContent = 'New Booking ';
+  clearJobNoError();
   refreshNextNoBadge();
 }
 
@@ -725,7 +813,15 @@ tbody.addEventListener('click', async function(e){
   if(delId){
     if(confirm('Delete this booking? This cannot be undone, and will remove it for everyone.')){
       try{
-        await deleteDoc(doc(db, 'bookings', delId));
+        await runTransaction(db, async (tx) => {
+          const bRef = doc(db, 'bookings', delId);
+          const bSnap = await tx.get(bRef);
+          if(bSnap.exists()){
+            const norm = normJobNo(bSnap.data().jobNo);
+            if(norm) tx.delete(doc(jobNoIndexCol, jobNoDocId(norm)));
+          }
+          tx.delete(bRef);
+        });
         if(fId.value === delId) resetForm();
       }catch(err){
         console.error(err);
@@ -794,7 +890,16 @@ document.getElementById('importInput').addEventListener('change', function(e){
       setSync('busy', 'Importing ' + incoming.length + ' booking(s)…');
       const batch = writeBatch(db);
       let maxNo = 0;
+      let skipped = [];
+      const claimedInThisImport = new Set();
+      const existingNorms = new Set(bookings.map(b => normJobNo(b.jobNo)).filter(Boolean));
+
       for(const b of incoming){
+        const norm = normJobNo(b.jobNo);
+        if(norm && (existingNorms.has(norm) || claimedInThisImport.has(norm))){
+          skipped.push(b);
+          continue; // don't create a booking that would collide on Job Book No
+        }
         const ref = doc(bookingsCol);
         batch.set(ref, {
           no: b.no || 0,
@@ -808,6 +913,10 @@ document.getElementById('importInput').addEventListener('change', function(e){
           ready: !!b.ready,
           createdAt: serverTimestamp()
         });
+        if(norm){
+          batch.set(doc(jobNoIndexCol, jobNoDocId(norm)), { bookingId: ref.id });
+          claimedInThisImport.add(norm);
+        }
         if((b.no||0) > maxNo) maxNo = b.no;
       }
       await batch.commit();
@@ -819,7 +928,13 @@ document.getElementById('importInput').addEventListener('change', function(e){
         if(maxNo > current) tx.set(counterRef, { value: maxNo }, { merge: true });
       });
 
-      alert('Import complete — ' + incoming.length + ' booking(s) added to the live database.');
+      const importedCount = incoming.length - skipped.length;
+      let msg = 'Import complete — ' + importedCount + ' booking(s) added to the live database.';
+      if(skipped.length){
+        msg += '\n\n' + skipped.length + ' booking(s) were skipped because their Job Book No already exists: ' +
+          skipped.map(b => b.jobNo).filter(Boolean).join(', ');
+      }
+      alert(msg);
     }catch(err){
       console.error(err);
       alert('Could not read or import this file.');
