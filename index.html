@@ -369,7 +369,7 @@
 
   <div class="toolbar">
     <div class="search">
-      <input type="text" id="searchBox" placeholder="Search by company name…">
+      <input type="text" id="searchBox" placeholder="Search by company name or Job Book No…">
     </div>
     <div class="field" style="min-width:190px;">
       <select id="statusFilter">
@@ -512,7 +512,7 @@ function render(){
   const q = searchBox.value.trim().toLowerCase();
   const statusVal = statusFilter.value;
   const rows = bookings
-    .filter(b => !q || (b.company||'').toLowerCase().includes(q))
+    .filter(b => !q || (b.company||'').toLowerCase().includes(q) || (b.jobNo||'').toLowerCase().includes(q))
     .filter(b => {
       if(statusVal === 'all') return true;
       if(statusVal === 'pending') return !b.printed;
