@@ -204,7 +204,7 @@
     box-shadow: var(--shadow);
   }
   .ledger-scroll{ overflow-x:auto; }
-  table{ width:100%; border-collapse:collapse; min-width:1080px; }
+  table{ width:100%; border-collapse:collapse; min-width:1160px; }
   thead th{
     text-align:left;
     font-size:11px; text-transform:uppercase; letter-spacing:.07em;
@@ -288,12 +288,33 @@
     .summary{ grid-template-columns: repeat(2,1fr); }
   }
 
-  /* ---------- Comment bubble button (in row actions) ---------- */
-  .comment-btn{ position:relative; }
+  /* ---------- Comment bubble button (standalone column, end of row) ---------- */
+  th.comments-col-head{ text-align:center; }
+  td.comments-col{ text-align:center; }
+  .comment-btn-standalone{
+    position:relative;
+    width:42px; height:42px;
+    border-radius:50%;
+    border:none;
+    background: var(--stamp);
+    color:#fff;
+    font-size:20px;
+    line-height:1;
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    box-shadow: 0 2px 6px rgba(178,58,47,0.35);
+    transition: transform .08s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .comment-btn-standalone:hover{
+    background:#96271D;
+    box-shadow: 0 3px 10px rgba(178,58,47,0.5);
+    transform: translateY(-1px);
+  }
+  .comment-btn-standalone:active{ transform: translateY(0) scale(0.96); }
   .unread-dot{
-    position:absolute; top:-4px; right:-4px;
-    width:9px; height:9px; border-radius:50%;
-    background:var(--stamp); border:2px solid var(--white);
+    position:absolute; top:-3px; right:-3px;
+    width:12px; height:12px; border-radius:50%;
+    background:#FFD54A; border:2px solid var(--white);
   }
 
   /* ---------- Comments sidebar ---------- */
@@ -386,6 +407,7 @@
 
   @media print{
     .comments-panel, .comments-overlay, .toast-container, #soundToggleBtn { display:none !important; }
+    .comments-col, .comments-col-head { display:none !important; }
     body{ background:#fff; padding:0; }
     .ticket, .toolbar, footer.foot, .row-actions, #entryForm { display:none !important; }
     .summary{ margin-bottom:14px; }
@@ -516,6 +538,7 @@
             <th class="num">Balance</th>
             <th>Status</th>
             <th class="row-actions">Actions</th>
+            <th class="comments-col-head">Comments</th>
           </tr>
         </thead>
         <tbody id="tbody">
@@ -526,6 +549,7 @@
             <td class="num" id="footAdvance">0.00</td>
             <td class="num" id="footTotal">0.00</td>
             <td class="num" id="footBalance">0.00</td>
+            <td></td>
             <td></td>
             <td></td>
           </tr>
@@ -932,7 +956,7 @@ function render(){
   if(rows.length === 0){
     const tr = document.createElement('tr');
     tr.className = 'empty-row';
-    tr.innerHTML = `<td colspan="10"><span class="big">🖨️</span>${bookings.length===0 ? 'No bookings yet — add the first one above.' : 'No bookings match your filters.'}</td>`;
+    tr.innerHTML = `<td colspan="11"><span class="big">🖨️</span>${bookings.length===0 ? 'No bookings yet — add the first one above.' : 'No bookings match your filters.'}</td>`;
     tbody.appendChild(tr);
   } else {
     for(const b of rows){
@@ -958,11 +982,13 @@ function render(){
           </div>
         </td>
         <td class="row-actions">
-          <button class="btn btn-ghost btn-small comment-btn" data-comments="${b.id}" title="Comments about this job">
-            💬<span class="unread-dot" data-for="${b.id}" style="display:${unreadJobIds.has(b.id)?'inline-block':'none'}"></span>
-          </button>
           <button class="btn btn-ghost btn-small" data-edit="${b.id}">Edit</button>
           <button class="btn btn-danger btn-small" data-del="${b.id}">Delete</button>
+        </td>
+        <td class="comments-col">
+          <button class="comment-btn-standalone" data-comments="${b.id}" title="Comments about this job">
+            💬<span class="unread-dot" data-for="${b.id}" style="display:${unreadJobIds.has(b.id)?'inline-block':'none'}"></span>
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
