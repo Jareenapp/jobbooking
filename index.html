@@ -913,6 +913,9 @@ function openComments(bookingId){
       `).join('');
     }
     commentsList.scrollTop = commentsList.scrollHeight;
+  }, (err) => {
+    console.error('Could not load comments for this job:', err);
+    commentsList.innerHTML = '<div class="comments-empty">⚠️ Could not load comments.<br>' + escapeHtml(explainDbError(err)) + '</div>';
   });
 }
 
@@ -1067,6 +1070,11 @@ onSnapshot(commentsGroupQ, (snap) => {
     }
     playNotifySound();
   });
+}, (err) => {
+  // This is the listener that powers ALL comment notifications (bell, sound, toast, desktop alert).
+  // If it fails — almost always a Firestore Rules problem — nothing above would ever fire, silently.
+  console.error('Comments notification listener failed:', err);
+  showToast('⚠️ Comment notifications are not working', explainDbError(err));
 });
 
 updateEnableAlertsBtn();
