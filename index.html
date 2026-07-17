@@ -291,6 +291,65 @@
   /* ---------- Comment bubble button (standalone column, end of row) ---------- */
   th.comments-col-head{ text-align:center; }
   td.comments-col{ text-align:center; }
+  /* ---------- Notification bell ---------- */
+  .notif-wrap{ position:relative; }
+  .notif-bell{
+    position:relative;
+    width:38px; height:38px; border-radius:50%;
+    border:1px solid var(--line); background:var(--white);
+    font-size:17px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: var(--shadow);
+  }
+  .notif-bell.has-unread{
+    animation: bell-shake 1.6s ease infinite;
+    border-color: var(--stamp);
+  }
+  @keyframes bell-shake{
+    0%, 88%, 100%{ transform: rotate(0); }
+    89%{ transform: rotate(-12deg); }
+    91%{ transform: rotate(10deg); }
+    93%{ transform: rotate(-8deg); }
+    95%{ transform: rotate(6deg); }
+    97%{ transform: rotate(0); }
+  }
+  .notif-badge{
+    position:absolute; top:-5px; right:-5px;
+    min-width:18px; height:18px; padding:0 4px;
+    border-radius:20px; background:var(--stamp); color:#fff;
+    font-size:10.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--paper);
+  }
+  .notif-dropdown{
+    display:none;
+    position:absolute; top:46px; right:0;
+    width:280px; max-width:80vw;
+    background:var(--white); border:1px solid var(--line); border-radius:10px;
+    box-shadow: 0 8px 28px rgba(31,36,48,0.18);
+    padding:12px; z-index:35;
+  }
+  .notif-dropdown.show{ display:block; }
+  .notif-dropdown-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); font-weight:700; margin-bottom:8px;
+  }
+  .notif-item{
+    display:block; width:100%; text-align:left;
+    background:var(--paper-dim); border:none; border-radius:7px;
+    padding:8px 10px; margin-bottom:6px; cursor:pointer;
+    font-size:12.5px; color:var(--ink); font-family:inherit;
+  }
+  .notif-item:hover{ background:var(--stamp-dim); }
+  .notif-empty{ font-size:12.5px; color:var(--ink-soft); padding:6px 2px 2px; }
+  .notif-enable-btn{
+    width:100%; margin-top:4px;
+    background:transparent; border:1px dashed var(--line); border-radius:7px;
+    padding:7px; font-size:11.5px; color:var(--ink-soft); cursor:pointer; font-family:inherit;
+  }
+  .notif-enable-btn:hover{ background:var(--paper-dim); }
+  .notif-enable-btn.granted{ display:none; }
+
   .comment-btn-standalone{
     position:relative;
     width:42px; height:42px;
@@ -399,6 +458,11 @@
     font-size:13px; line-height:1.4;
   }
   .toast strong{ display:block; font-size:12.5px; color:#F4C77A; margin-bottom:3px; }
+  .toast{ position:relative; padding-right:28px; }
+  .toast .toast-close{
+    position:absolute; top:8px; right:10px; opacity:.6; font-size:12px; cursor:pointer;
+  }
+  .toast .toast-close:hover{ opacity:1; }
   @keyframes toast-in{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
 
   @media (max-width: 480px){
@@ -429,7 +493,19 @@
         <p class="subtitle">Job Booking Register — advance &amp; balance tracker</p>
       </div>
     </div>
-    <div class="today" id="todayLabel"></div>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <div class="notif-wrap">
+        <button type="button" id="notifBellBtn" class="notif-bell" title="Comment notifications">
+          🔔<span id="notifBadge" class="notif-badge" style="display:none;">0</span>
+        </button>
+        <div id="notifDropdown" class="notif-dropdown">
+          <div class="notif-dropdown-title">New comments</div>
+          <div id="notifDropdownList"></div>
+          <button type="button" id="enableAlertsBtn" class="notif-enable-btn">Enable desktop alerts</button>
+        </div>
+      </div>
+      <div class="today" id="todayLabel"></div>
+    </div>
   </header>
 
   <section class="summary">
@@ -689,6 +765,11 @@ const nameModalInput = document.getElementById('nameModalInput');
 const nameModalSaveBtn = document.getElementById('nameModalSaveBtn');
 const soundToggleBtn = document.getElementById('soundToggleBtn');
 const toastContainer = document.getElementById('toastContainer');
+const notifBellBtn = document.getElementById('notifBellBtn');
+const notifBadge = document.getElementById('notifBadge');
+const notifDropdown = document.getElementById('notifDropdown');
+const notifDropdownList = document.getElementById('notifDropdownList');
+const enableAlertsBtn = document.getElementById('enableAlertsBtn');
 
 const NAME_KEY = 'jpp_staff_name';
 const MUTE_KEY = 'jpp_sound_muted';
@@ -714,10 +795,22 @@ soundToggleBtn.addEventListener('click', function(){
 
 // Short two-tone "ding" using Web Audio — no external sound file needed.
 let audioCtx = null;
+
+// Browsers block audio until the page has been interacted with at least once.
+// Unlock it as early as possible so real notification sounds actually play later.
+function unlockAudio(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){ /* ignore */ }
+}
+['click','keydown','touchstart'].forEach(evt => document.addEventListener(evt, unlockAudio, { once:true }));
+
 function playNotifySound(){
   if(soundMuted) return;
   try{
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
     const now = audioCtx.currentTime;
     [880, 1174.66].forEach((freq, i) => {
       const osc = audioCtx.createOscillator();
@@ -725,7 +818,7 @@ function playNotifySound(){
       osc.type = 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0.0001, now + i*0.14);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + i*0.14 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + i*0.14 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + i*0.14 + 0.32);
       osc.connect(gain).connect(audioCtx.destination);
       osc.start(now + i*0.14);
@@ -737,10 +830,14 @@ function playNotifySound(){
 function showToast(title, text, onClick){
   const el = document.createElement('div');
   el.className = 'toast';
-  el.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(text)}`;
-  el.addEventListener('click', () => { onClick && onClick(); el.remove(); });
+  el.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(text)}<span class="toast-close">✕</span>`;
+  el.addEventListener('click', (e) => {
+    if(e.target.classList.contains('toast-close')){ el.remove(); return; }
+    onClick && onClick();
+    el.remove();
+  });
   toastContainer.appendChild(el);
-  setTimeout(() => el.remove(), 6000);
+  setTimeout(() => el.remove(), 10000);
 }
 
 function ensureStaffName(onReady){
@@ -797,6 +894,8 @@ function openComments(bookingId){
 
   unreadJobIds.delete(bookingId);
   renderUnreadDot(bookingId);
+  renderNotifBell();
+  if(unreadJobIds.size === 0) stopTitleFlash();
 
   if(currentCommentsUnsub) currentCommentsUnsub();
   const cq = query(collection(db, 'bookings', bookingId, 'comments'), orderBy('createdAt', 'asc'));
@@ -854,6 +953,94 @@ function renderUnreadDot(bookingId){
   if(dot) dot.style.display = unreadJobIds.has(bookingId) ? 'inline-block' : 'none';
 }
 
+// ---- Persistent notification bell (stays visible, unlike a fading toast) ----
+function renderNotifBell(){
+  const count = unreadJobIds.size;
+  if(count > 0){
+    notifBadge.style.display = 'flex';
+    notifBadge.textContent = count > 9 ? '9+' : String(count);
+    notifBellBtn.classList.add('has-unread');
+  } else {
+    notifBadge.style.display = 'none';
+    notifBellBtn.classList.remove('has-unread');
+  }
+  notifDropdownList.innerHTML = '';
+  if(count === 0){
+    notifDropdownList.innerHTML = '<div class="notif-empty">No new comments right now.</div>';
+  } else {
+    unreadJobIds.forEach(id => {
+      const b = bookings.find(x => x.id === id);
+      const label = b ? ('Job #' + b.no + ' — ' + (b.company || 'no company name')) : 'Job';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'notif-item';
+      btn.textContent = label;
+      btn.addEventListener('click', () => { openComments(id); notifDropdown.classList.remove('show'); });
+      notifDropdownList.appendChild(btn);
+    });
+  }
+}
+
+notifBellBtn.addEventListener('click', function(e){
+  e.stopPropagation();
+  notifDropdown.classList.toggle('show');
+});
+document.addEventListener('click', function(e){
+  if(notifDropdown.classList.contains('show') && !notifDropdown.contains(e.target) && e.target !== notifBellBtn){
+    notifDropdown.classList.remove('show');
+  }
+});
+
+// ---- Desktop / OS-level notifications — visible even if this tab isn't focused ----
+function updateEnableAlertsBtn(){
+  if(!('Notification' in window)){
+    enableAlertsBtn.style.display = 'none';
+    return;
+  }
+  if(Notification.permission === 'granted'){
+    enableAlertsBtn.textContent = '🔔 Desktop alerts on';
+    enableAlertsBtn.classList.add('granted');
+  } else if(Notification.permission === 'denied'){
+    enableAlertsBtn.textContent = 'Desktop alerts blocked — check browser site settings';
+    enableAlertsBtn.disabled = true;
+  } else {
+    enableAlertsBtn.textContent = 'Enable desktop alerts';
+    enableAlertsBtn.classList.remove('granted');
+  }
+}
+enableAlertsBtn.addEventListener('click', async function(){
+  if(!('Notification' in window)) return;
+  try{ await Notification.requestPermission(); }catch(e){ /* ignore */ }
+  updateEnableAlertsBtn();
+});
+
+function sendDesktopNotification(jobLabel, text, bookingId){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try{
+    const n = new Notification('💬 New comment — ' + jobLabel, { body: text || '', tag: 'job-comment-' + bookingId });
+    n.onclick = () => { window.focus(); openComments(bookingId); n.close(); };
+  }catch(e){ /* ignore */ }
+}
+
+// ---- Flash the browser tab title when there's unread activity and the tab is in the background ----
+const originalTitle = document.title;
+let titleFlashInterval = null;
+function startTitleFlash(){
+  if(titleFlashInterval) return;
+  let on = false;
+  titleFlashInterval = setInterval(() => {
+    document.title = on ? originalTitle : '💬 New comment!';
+    on = !on;
+  }, 1200);
+}
+function stopTitleFlash(){
+  if(titleFlashInterval){ clearInterval(titleFlashInterval); titleFlashInterval = null; }
+  document.title = originalTitle;
+}
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) stopTitleFlash();
+});
+
 // Global listener across every job's comments — powers notifications + sound,
 // even for jobs the person isn't currently looking at.
 const commentsGroupQ = query(collectionGroup(db, 'comments'), orderBy('createdAt', 'desc'), limit(30));
@@ -873,11 +1060,17 @@ onSnapshot(commentsGroupQ, (snap) => {
     if(currentCommentsBookingId !== bookingId){
       unreadJobIds.add(bookingId);
       renderUnreadDot(bookingId);
+      renderNotifBell();
       showToast('💬 New comment — ' + jobLabel, data.text || '', () => openComments(bookingId));
+      sendDesktopNotification(jobLabel, data.text || '', bookingId);
+      if(document.hidden || !document.hasFocus()) startTitleFlash();
     }
     playNotifySound();
   });
 });
+
+updateEnableAlertsBtn();
+renderNotifBell();
 
 
 function setSync(state, msg){
