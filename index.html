@@ -288,7 +288,104 @@
     .summary{ grid-template-columns: repeat(2,1fr); }
   }
 
+  /* ---------- Comment bubble button (in row actions) ---------- */
+  .comment-btn{ position:relative; }
+  .unread-dot{
+    position:absolute; top:-4px; right:-4px;
+    width:9px; height:9px; border-radius:50%;
+    background:var(--stamp); border:2px solid var(--white);
+  }
+
+  /* ---------- Comments sidebar ---------- */
+  .comments-overlay{
+    display:none; position:fixed; inset:0; background:rgba(31,36,48,0.35);
+    z-index:40; backdrop-filter: blur(1px);
+  }
+  .comments-overlay.show{ display:block; }
+  .comments-panel{
+    position:fixed; top:0; right:0; height:100%; width:400px; max-width:92vw;
+    background:var(--paper); border-left:1px solid var(--line);
+    box-shadow: -8px 0 24px rgba(31,36,48,0.18);
+    z-index:41; display:flex; flex-direction:column;
+    transform: translateX(100%); transition: transform .22s ease;
+  }
+  .comments-panel.show{ transform: translateX(0); }
+  .comments-panel-head{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:10px; padding:16px 18px; border-bottom:1px solid var(--line);
+    background:var(--white);
+  }
+  .comments-job-title{ font-family:Georgia, serif; font-size:15.5px; font-weight:700; }
+  .comments-job-sub{ font-size:12px; color:var(--ink-soft); margin-top:3px; }
+  .comments-list{
+    flex:1; overflow-y:auto; padding:16px 18px; display:flex; flex-direction:column; gap:12px;
+  }
+  .comment-bubble{
+    background:var(--white); border:1px solid var(--line); border-radius:10px;
+    padding:9px 12px; max-width:88%;
+  }
+  .comment-bubble .c-author{
+    font-size:11.5px; font-weight:700; color:var(--stamp); margin-bottom:2px;
+  }
+  .comment-bubble .c-text{ font-size:13.5px; line-height:1.45; white-space:pre-wrap; word-break:break-word; }
+  .comment-bubble .c-time{ font-size:10.5px; color:var(--ink-soft); margin-top:5px; }
+  .comments-empty{ color:var(--ink-soft); font-size:13px; text-align:center; margin-top:30px; }
+  .comments-compose{
+    border-top:1px solid var(--line); background:var(--white); padding:12px 18px 16px;
+  }
+  .comments-name-row{
+    font-size:11.5px; color:var(--ink-soft); margin-bottom:8px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .link-btn{
+    background:none; border:none; color:var(--stamp); font-size:11.5px;
+    text-decoration:underline; cursor:pointer; font-family:inherit; padding:0;
+  }
+  .comments-input-row{ display:flex; gap:8px; align-items:flex-end; }
+  .comments-input-row textarea{
+    flex:1; resize:none; border:1px solid var(--line); border-radius:8px;
+    padding:9px 10px; font-family:inherit; font-size:13.5px; background:var(--paper);
+  }
+  .comments-input-row textarea:focus{
+    outline:none; border-color:var(--stamp); background:var(--white);
+    box-shadow:0 0 0 3px var(--stamp-dim);
+  }
+
+  /* ---------- Set-name modal ---------- */
+  .name-modal{
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:var(--white); border-radius:12px; padding:24px 26px;
+    width:340px; max-width:88vw; box-shadow:0 10px 40px rgba(0,0,0,0.25);
+  }
+  .name-modal h3{ margin:0 0 6px; font-family:Georgia, serif; font-size:17px; }
+  .name-modal p{ margin:0 0 14px; font-size:12.5px; color:var(--ink-soft); }
+  .name-modal input{
+    width:100%; border:1px solid var(--line); border-radius:6px;
+    padding:9px 10px; font-size:14px; font-family:inherit; margin-bottom:12px;
+  }
+  .name-modal input:focus{ outline:none; border-color:var(--stamp); box-shadow:0 0 0 3px var(--stamp-dim); }
+  .name-modal .btn{ width:100%; }
+
+  /* ---------- Toasts ---------- */
+  .toast-container{
+    position:fixed; bottom:20px; right:20px; z-index:60;
+    display:flex; flex-direction:column; gap:10px; max-width:320px;
+  }
+  .toast{
+    background:var(--ink); color:var(--paper); border-radius:10px;
+    padding:12px 14px; box-shadow:0 6px 20px rgba(0,0,0,0.25);
+    cursor:pointer; animation: toast-in .18s ease;
+    font-size:13px; line-height:1.4;
+  }
+  .toast strong{ display:block; font-size:12.5px; color:#F4C77A; margin-bottom:3px; }
+  @keyframes toast-in{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+
+  @media (max-width: 480px){
+    .comments-panel{ width:100vw; }
+  }
+
   @media print{
+    .comments-panel, .comments-overlay, .toast-container, #soundToggleBtn { display:none !important; }
     body{ background:#fff; padding:0; }
     .ticket, .toolbar, footer.foot, .row-actions, #entryForm { display:none !important; }
     .summary{ margin-bottom:14px; }
@@ -391,6 +488,7 @@
       </select>
     </div>
     <div class="actions">
+      <button class="btn btn-ghost" id="soundToggleBtn" title="Toggle comment notification sound">🔔 Sound On</button>
       <button class="btn btn-ghost" id="importBtn">Import Old Backup (one-time)</button>
       <input type="file" id="importInput" accept=".json" style="display:none;">
       <button class="btn btn-ghost" id="exportCsvBtn">Export CSV</button>
@@ -439,10 +537,46 @@
   <footer class="foot">Saved automatically in this browser · Jareena Printing Press LLC, Sharjah, UAE</footer>
 </div>
 
+<!-- ---------- Comments sidebar ---------- -->
+<div id="commentsOverlay" class="comments-overlay"></div>
+<aside id="commentsPanel" class="comments-panel">
+  <div class="comments-panel-head">
+    <div>
+      <div class="comments-job-title" id="commentsJobTitle">Job</div>
+      <div class="comments-job-sub" id="commentsJobSub"></div>
+    </div>
+    <button type="button" class="btn btn-ghost btn-small" id="closeCommentsBtn">✕ Close</button>
+  </div>
+  <div class="comments-list" id="commentsList"></div>
+  <div class="comments-compose">
+    <div class="comments-name-row">
+      Commenting as <strong id="commentsAuthorLabel">—</strong>
+      <button type="button" class="link-btn" id="changeNameBtn">change</button>
+    </div>
+    <div class="comments-input-row">
+      <textarea id="commentInput" placeholder="Write a note about this job… e.g. 'Customer wants matte finish'" rows="2"></textarea>
+      <button type="button" class="btn btn-primary btn-small" id="sendCommentBtn">Send</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ---------- Set-your-name modal ---------- -->
+<div id="nameModalOverlay" class="comments-overlay" style="display:none;">
+  <div class="name-modal">
+    <h3>What's your name?</h3>
+    <p>This shows next to your comments so the team knows who wrote what.</p>
+    <input type="text" id="nameModalInput" placeholder="e.g. Ahmed, Reception">
+    <button type="button" class="btn btn-primary" id="nameModalSaveBtn">Save &amp; Continue</button>
+  </div>
+</div>
+
+<!-- ---------- Toast notifications ---------- -->
+<div id="toastContainer" class="toast-container"></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, doc, onSnapshot, query, orderBy,
+  getFirestore, collection, collectionGroup, doc, onSnapshot, query, orderBy, limit,
   addDoc, updateDoc, deleteDoc, runTransaction, getDoc, setDoc,
   serverTimestamp, enableIndexedDbPersistence, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -513,10 +647,239 @@ const syncText = document.getElementById('syncText');
 let bookings = [];      // live mirror of Firestore data
 let nextNoPreview = 1;  // best-guess "next number" shown before saving
 
+// ---------------------------------------------------------------
+// Comments / notifications feature
+// ---------------------------------------------------------------
+const commentsOverlay = document.getElementById('commentsOverlay');
+const commentsPanel = document.getElementById('commentsPanel');
+const commentsJobTitle = document.getElementById('commentsJobTitle');
+const commentsJobSub = document.getElementById('commentsJobSub');
+const commentsList = document.getElementById('commentsList');
+const commentInput = document.getElementById('commentInput');
+const sendCommentBtn = document.getElementById('sendCommentBtn');
+const closeCommentsBtn = document.getElementById('closeCommentsBtn');
+const commentsAuthorLabel = document.getElementById('commentsAuthorLabel');
+const changeNameBtn = document.getElementById('changeNameBtn');
+const nameModalOverlay = document.getElementById('nameModalOverlay');
+const nameModalInput = document.getElementById('nameModalInput');
+const nameModalSaveBtn = document.getElementById('nameModalSaveBtn');
+const soundToggleBtn = document.getElementById('soundToggleBtn');
+const toastContainer = document.getElementById('toastContainer');
+
+const NAME_KEY = 'jpp_staff_name';
+const MUTE_KEY = 'jpp_sound_muted';
+const appLoadedAt = Date.now();
+
+let currentCommentsBookingId = null;
+let currentCommentsUnsub = null;
+let unreadJobIds = new Set();
+let soundMuted = localStorage.getItem(MUTE_KEY) === '1';
+
+function getStaffName(){ return (localStorage.getItem(NAME_KEY) || '').trim(); }
+function setStaffName(name){ localStorage.setItem(NAME_KEY, name.trim()); }
+
+function updateSoundBtn(){
+  soundToggleBtn.textContent = soundMuted ? '🔕 Sound Off' : '🔔 Sound On';
+}
+updateSoundBtn();
+soundToggleBtn.addEventListener('click', function(){
+  soundMuted = !soundMuted;
+  localStorage.setItem(MUTE_KEY, soundMuted ? '1' : '0');
+  updateSoundBtn();
+});
+
+// Short two-tone "ding" using Web Audio — no external sound file needed.
+let audioCtx = null;
+function playNotifySound(){
+  if(soundMuted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    [880, 1174.66].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i*0.14);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + i*0.14 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i*0.14 + 0.32);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + i*0.14);
+      osc.stop(now + i*0.14 + 0.34);
+    });
+  }catch(e){ /* audio not available — ignore */ }
+}
+
+function showToast(title, text, onClick){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(text)}`;
+  el.addEventListener('click', () => { onClick && onClick(); el.remove(); });
+  toastContainer.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+function ensureStaffName(onReady){
+  const existing = getStaffName();
+  if(existing){ onReady(existing); return; }
+  nameModalOverlay.style.display = 'block';
+  nameModalInput.value = '';
+  nameModalInput.focus();
+  const handler = function(){
+    const val = nameModalInput.value.trim();
+    if(!val){ nameModalInput.focus(); return; }
+    setStaffName(val);
+    nameModalOverlay.style.display = 'none';
+    nameModalSaveBtn.removeEventListener('click', handler);
+    onReady(val);
+  };
+  nameModalSaveBtn.addEventListener('click', handler);
+  nameModalInput.addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter'){ ev.preventDefault(); handler(); }
+  }, { once:true });
+}
+
+changeNameBtn.addEventListener('click', function(){
+  nameModalOverlay.style.display = 'block';
+  nameModalInput.value = getStaffName();
+  nameModalInput.focus();
+  const handler = function(){
+    const val = nameModalInput.value.trim();
+    if(!val){ nameModalInput.focus(); return; }
+    setStaffName(val);
+    commentsAuthorLabel.textContent = val;
+    nameModalOverlay.style.display = 'none';
+    nameModalSaveBtn.removeEventListener('click', handler);
+  };
+  nameModalSaveBtn.addEventListener('click', handler, { once:true });
+});
+
+function timeAgo(ts){
+  if(!ts) return 'sending…';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ', ' +
+         d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+}
+
+function openComments(bookingId){
+  const b = bookings.find(x => x.id === bookingId);
+  if(!b) return;
+  currentCommentsBookingId = bookingId;
+  commentsJobTitle.textContent = 'Job #' + b.no + (b.jobNo ? ' · Book No ' + b.jobNo : '');
+  commentsJobSub.textContent = (b.company || 'No company name') + ' — ' + (b.desc || '');
+  commentsOverlay.classList.add('show');
+  commentsPanel.classList.add('show');
+  commentsAuthorLabel.textContent = getStaffName() || '—';
+
+  unreadJobIds.delete(bookingId);
+  renderUnreadDot(bookingId);
+
+  if(currentCommentsUnsub) currentCommentsUnsub();
+  const cq = query(collection(db, 'bookings', bookingId, 'comments'), orderBy('createdAt', 'asc'));
+  currentCommentsUnsub = onSnapshot(cq, (snap) => {
+    const items = snap.docs.map(d => d.data());
+    if(items.length === 0){
+      commentsList.innerHTML = '<div class="comments-empty">No comments yet. Be the first to leave a note about this job.</div>';
+    } else {
+      commentsList.innerHTML = items.map(c => `
+        <div class="comment-bubble">
+          <div class="c-author">${escapeHtml(c.author || 'Staff')}</div>
+          <div class="c-text">${escapeHtml(c.text || '')}</div>
+          <div class="c-time">${timeAgo(c.createdAt)}</div>
+        </div>
+      `).join('');
+    }
+    commentsList.scrollTop = commentsList.scrollHeight;
+  });
+}
+
+function closeComments(){
+  commentsOverlay.classList.remove('show');
+  commentsPanel.classList.remove('show');
+  if(currentCommentsUnsub){ currentCommentsUnsub(); currentCommentsUnsub = null; }
+  currentCommentsBookingId = null;
+}
+closeCommentsBtn.addEventListener('click', closeComments);
+commentsOverlay.addEventListener('click', closeComments);
+
+async function sendComment(){
+  const text = commentInput.value.trim();
+  if(!text || !currentCommentsBookingId) return;
+  ensureStaffName(async function(name){
+    sendCommentBtn.disabled = true;
+    try{
+      await addDoc(collection(db, 'bookings', currentCommentsBookingId, 'comments'), {
+        text, author: name, createdAt: serverTimestamp()
+      });
+      commentInput.value = '';
+    }catch(err){
+      alert(explainDbError(err));
+    }finally{
+      sendCommentBtn.disabled = false;
+      commentInput.focus();
+    }
+  });
+}
+sendCommentBtn.addEventListener('click', sendComment);
+commentInput.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendComment(); }
+});
+
+function renderUnreadDot(bookingId){
+  const dot = document.querySelector('.unread-dot[data-for="' + bookingId + '"]');
+  if(dot) dot.style.display = unreadJobIds.has(bookingId) ? 'inline-block' : 'none';
+}
+
+// Global listener across every job's comments — powers notifications + sound,
+// even for jobs the person isn't currently looking at.
+const commentsGroupQ = query(collectionGroup(db, 'comments'), orderBy('createdAt', 'desc'), limit(30));
+onSnapshot(commentsGroupQ, (snap) => {
+  snap.docChanges().forEach(change => {
+    if(change.type !== 'added') return;
+    const data = change.doc.data();
+    if(!data.createdAt || change.doc.metadata.hasPendingWrites) return; // wait for server-confirmed writes
+    const createdMs = data.createdAt.toMillis ? data.createdAt.toMillis() : 0;
+    if(createdMs <= appLoadedAt) return; // ignore history from before this session opened
+    if(data.author && data.author === getStaffName()) return; // don't notify yourself
+
+    const bookingId = change.doc.ref.parent.parent.id;
+    const b = bookings.find(x => x.id === bookingId);
+    const jobLabel = b ? ('Job #' + b.no + (b.company ? ' — ' + b.company : '')) : 'A job';
+
+    if(currentCommentsBookingId !== bookingId){
+      unreadJobIds.add(bookingId);
+      renderUnreadDot(bookingId);
+      showToast('💬 New comment — ' + jobLabel, data.text || '', () => openComments(bookingId));
+    }
+    playNotifySound();
+  });
+});
+
+
 function setSync(state, msg){
   const colors = { live: '#2F6F4E', busy: '#B23A2F', off: '#999' };
   syncDot.style.background = colors[state] || '#999';
   syncText.textContent = msg;
+}
+
+// Turns a raw Firestore error into an accurate, actionable message —
+// "check your internet" is wrong and misleading for most real failures.
+function explainDbError(err){
+  const code = err && err.code ? err.code : '';
+  if(code === 'permission-denied' || code === 'PERMISSION_DENIED'){
+    return 'The database rejected this request (permission denied). Your Firestore Rules likely don\'t allow access to one of the "bookings", "meta", or "jobNoIndex" collections yet. Open Firebase Console → Firestore Database → Rules, make sure all three are covered, and click Publish.';
+  }
+  if(code === 'unavailable'){
+    return 'Could not reach the database right now (connection issue). Check your internet connection and try again in a moment.';
+  }
+  if(code === 'unauthenticated'){
+    return 'The database rejected this request (not authenticated). Check your Firestore Rules.';
+  }
+  if(code === 'resource-exhausted'){
+    return 'The database has hit its usage limit for now (Firestore quota). Try again shortly.';
+  }
+  console.error('Firestore error', code, err);
+  return 'Could not save. Technical details: ' + (err && err.message ? err.message : String(err));
 }
 
 function fmt(n){
@@ -595,6 +958,9 @@ function render(){
           </div>
         </td>
         <td class="row-actions">
+          <button class="btn btn-ghost btn-small comment-btn" data-comments="${b.id}" title="Comments about this job">
+            💬<span class="unread-dot" data-for="${b.id}" style="display:${unreadJobIds.has(b.id)?'inline-block':'none'}"></span>
+          </button>
           <button class="btn btn-ghost btn-small" data-edit="${b.id}">Edit</button>
           <button class="btn btn-danger btn-small" data-del="${b.id}">Delete</button>
         </td>
@@ -732,8 +1098,7 @@ form.addEventListener('submit', async function(e){
       showJobNoError('Job Book No "' + jobNoRaw + '" already exists. Please use a different number.');
       fJobNo.focus();
     } else {
-      console.error(err);
-      alert('Could not save — check your internet connection and try again.');
+      alert(explainDbError(err));
     }
   }finally{
     submitBtn.disabled = false;
@@ -762,6 +1127,12 @@ tbody.addEventListener('click', async function(e){
   const delId = e.target.getAttribute('data-del');
   const togglePrintedId = e.target.getAttribute('data-toggle-printed');
   const toggleReadyId = e.target.getAttribute('data-toggle-ready');
+  const commentsBtn = e.target.closest('[data-comments]');
+
+  if(commentsBtn){
+    openComments(commentsBtn.getAttribute('data-comments'));
+    return;
+  }
 
   if(togglePrintedId){
     const b = bookings.find(x => x.id === togglePrintedId);
@@ -825,7 +1196,7 @@ tbody.addEventListener('click', async function(e){
         if(fId.value === delId) resetForm();
       }catch(err){
         console.error(err);
-        alert('Could not delete — check your internet connection and try again.');
+        alert(explainDbError(err));
       }
     }
   }
@@ -936,8 +1307,11 @@ document.getElementById('importInput').addEventListener('change', function(e){
       }
       alert(msg);
     }catch(err){
-      console.error(err);
-      alert('Could not read or import this file.');
+      if(err instanceof SyntaxError){
+        alert('Could not read this file — it does not look like valid JSON.');
+      } else {
+        alert(explainDbError(err));
+      }
     }
     e.target.value = '';
   };
@@ -945,7 +1319,6 @@ document.getElementById('importInput').addEventListener('change', function(e){
 });
 
 render();
-</script>
 </script>
 </body>
 </html>
