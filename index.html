@@ -915,7 +915,7 @@ function openComments(bookingId){
     commentsList.scrollTop = commentsList.scrollHeight;
   }, (err) => {
     console.error('Could not load comments for this job:', err);
-    commentsList.innerHTML = '<div class="comments-empty">⚠️ Could not load comments.<br>' + escapeHtml(explainDbError(err)) + '</div>';
+    commentsList.innerHTML = '<div class="comments-empty">⚠️ Could not load comments.<br>' + escapeHtml(explainDbError(err, 'bookings/{id}/comments')) + '</div>';
   });
 }
 
@@ -939,7 +939,7 @@ async function sendComment(){
       });
       commentInput.value = '';
     }catch(err){
-      alert(explainDbError(err));
+      alert(explainDbError(err, 'bookings/{id}/comments'));
     }finally{
       sendCommentBtn.disabled = false;
       commentInput.focus();
@@ -1074,7 +1074,7 @@ onSnapshot(commentsGroupQ, (snap) => {
   // This is the listener that powers ALL comment notifications (bell, sound, toast, desktop alert).
   // If it fails — almost always a Firestore Rules problem — nothing above would ever fire, silently.
   console.error('Comments notification listener failed:', err);
-  showToast('⚠️ Comment notifications are not working', explainDbError(err));
+  showToast('⚠️ Comment notifications are not working', explainDbError(err, 'bookings/{id}/comments (collection group)'));
 });
 
 updateEnableAlertsBtn();
@@ -1089,10 +1089,11 @@ function setSync(state, msg){
 
 // Turns a raw Firestore error into an accurate, actionable message —
 // "check your internet" is wrong and misleading for most real failures.
-function explainDbError(err){
+function explainDbError(err, context){
   const code = err && err.code ? err.code : '';
+  const where = context ? (' (needed for: ' + context + ')') : '';
   if(code === 'permission-denied' || code === 'PERMISSION_DENIED'){
-    return 'The database rejected this request (permission denied). Your Firestore Rules likely don\'t allow access to one of the "bookings", "meta", or "jobNoIndex" collections yet. Open Firebase Console → Firestore Database → Rules, make sure all three are covered, and click Publish.';
+    return 'The database rejected this request (permission denied)' + where + '. Your Firestore Rules likely don\'t allow this yet. Open Firebase Console → Firestore Database → Rules, make sure "bookings", "bookings/{id}/comments", "meta", and "jobNoIndex" are all covered, and click Publish.';
   }
   if(code === 'unavailable'){
     return 'Could not reach the database right now (connection issue). Check your internet connection and try again in a moment.';
@@ -1325,7 +1326,7 @@ form.addEventListener('submit', async function(e){
       showJobNoError('Job Book No "' + jobNoRaw + '" already exists. Please use a different number.');
       fJobNo.focus();
     } else {
-      alert(explainDbError(err));
+      alert(explainDbError(err, 'bookings, meta, jobNoIndex'));
     }
   }finally{
     submitBtn.disabled = false;
@@ -1423,7 +1424,7 @@ tbody.addEventListener('click', async function(e){
         if(fId.value === delId) resetForm();
       }catch(err){
         console.error(err);
-        alert(explainDbError(err));
+        alert(explainDbError(err, 'bookings, jobNoIndex'));
       }
     }
   }
@@ -1537,7 +1538,7 @@ document.getElementById('importInput').addEventListener('change', function(e){
       if(err instanceof SyntaxError){
         alert('Could not read this file — it does not look like valid JSON.');
       } else {
-        alert(explainDbError(err));
+        alert(explainDbError(err, 'bookings, meta, jobNoIndex'));
       }
     }
     e.target.value = '';
